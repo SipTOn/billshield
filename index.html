@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      (function() {
+        try {
+          var originalFetch = window.fetch;
+          var fetchHolder = typeof originalFetch === 'function' ? originalFetch.bind(window) : originalFetch;
+          Object.defineProperty(window, 'fetch', {
+            get: function() {
+              return fetchHolder;
+            },
+            set: function(newFetch) {
+              fetchHolder = newFetch;
+            },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (e) {}
+
+        try {
+          if (typeof Window !== 'undefined' && Window.prototype) {
+            var protoDesc = Object.getOwnPropertyDescriptor(Window.prototype, 'fetch');
+            if (protoDesc && !protoDesc.set) {
+              Object.defineProperty(Window.prototype, 'fetch', {
+                get: protoDesc.get,
+                set: function(val) {
+                  try {
+                    Object.defineProperty(this, 'fetch', {
+                      value: val,
+                      writable: true,
+                      configurable: true,
+                      enumerable: true
+                    });
+                  } catch (err) {
+                    this._customFetch = val;
+                  }
+                },
+                configurable: true
+              });
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BillShield</title>
+    <meta name="description" content="Automated bill auditing and mathematical anomaly detection with privacy-first extraction." />
+    <meta property="og:title" content="BillShield" />
+    <meta property="og:description" content="Automated bill auditing and mathematical anomaly detection with privacy-first extraction." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

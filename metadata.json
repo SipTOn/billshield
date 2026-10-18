@@ -1,0 +1,6 @@
+{
+  "name": "BillShield",
+  "description": "Automated bill auditing and mathematical anomaly detection with privacy-first extraction.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
