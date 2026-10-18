@@ -11,6 +11,7 @@ import { auditBillData } from './utils/mathAudit';
 import { computeWordDiff, WordDiffResult } from './utils/wordDiff';
 import { getAuditHistory, saveAuditToHistory, clearAuditHistory } from './utils/historyStorage';
 import { renderPdfPageToDataUrl } from './utils/pdfRenderer';
+import { saveCheckToSupabase } from './utils/saveToSupabase';
 
 export default function App() {
   const [screen, setScreen] = useState<NavStep>('upload');
@@ -158,6 +159,9 @@ export default function App() {
       };
       saveAuditToHistory(historyItem);
       setHistoryRecords(getAuditHistory());
+
+      // Save to Supabase: all flagged charges explained by the user, no message needed
+      saveCheckToSupabase({ audit: updatedBill, file: uploadedFile });
     }
   };
 
@@ -201,6 +205,17 @@ export default function App() {
 
     saveAuditToHistory(historyItem);
     setHistoryRecords(getAuditHistory());
+
+    // Save to Supabase: bill + lines + the message linked to the line it disputes
+    saveCheckToSupabase({
+      audit: auditedBill,
+      file: uploadedFile,
+      disputedLine: selectedFlaggedLine,
+      draft,
+      finalMessage,
+      wordsChanged: diff.totalChanged,
+    });
+
     setScreen('sent');
   };
 
