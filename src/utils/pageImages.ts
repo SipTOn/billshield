@@ -17,7 +17,12 @@ export function getPageImage(page: number, fallback?: string): Promise<string | 
   }
   let p = cache.get(page);
   if (!p) {
-    p = renderPdfPageToDataUrl(source.data, page).catch(() => fallback);
+    p = Promise.race([
+      renderPdfPageToDataUrl(source.data, page),
+      new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), 15000)),
+    ])
+      .then((u) => u || fallback)
+      .catch(() => fallback);
     cache.set(page, p);
   }
   return p;
