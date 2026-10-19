@@ -22,7 +22,7 @@ STRICT PRIVACY RULES:
 - Bills can be from any country and in any currency. Keep amounts exactly as printed (do not convert currency).
 - The 'lines' array must ONLY contain individual service, product, and usage charge line items before tax.
 - DO NOT include summary or structural lines in 'lines' (such as Subtotal, Total, Total Amount Payable, GST, CGST, SGST, IGST, VAT, Tax lines, Previous Balance, Payments Received, or Rounding off). Put those into the top-level 'total' and 'tax_rate' fields instead.
-- For each charge line item, detect its visual bounding box coordinates on the document 'box_2d': [ymin, xmin, ymax, xmax] normalised from 0 to 1000 (where 0 is top/left, 1000 is bottom/right), and 'page' (integer page number, starting from 1).
+- For EVERY charge line item you MUST return its visual bounding box (never omit it). Detect its visual bounding box coordinates on the document 'box_2d': [ymin, xmin, ymax, xmax] normalised from 0 to 1000 (where 0 is top/left, 1000 is bottom/right), and 'page' (integer page number, starting from 1).
 
 Format your output strictly according to this JSON structure:
 {
@@ -65,7 +65,7 @@ Format your output strictly according to this JSON structure:
                   box_2d: { type: Type.ARRAY, items: { type: Type.INTEGER } },
                   page: { type: Type.INTEGER },
                 },
-                required: ['label', 'amount'],
+                required: ['label', 'amount', 'box_2d', 'page'],
               },
             },
           },
