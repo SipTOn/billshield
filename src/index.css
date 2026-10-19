@@ -150,3 +150,35 @@
   .rc-rule { stroke: #4A453F; }
   .rc-circle { stroke: #F87171; }
 }
+
+/* ---------- Drafting animations ---------- */
+.bs-skeleton {
+  background: linear-gradient(90deg, #EAE4DA 0%, #F5F1EA 40%, #EAE4DA 80%);
+  background-size: 200% 100%;
+  animation: bsShimmer 1.4s ease-in-out infinite;
+}
+@keyframes bsShimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+.bs-typing { display: inline-flex; gap: 3px; }
+.bs-typing i {
+  width: 6px; height: 6px; border-radius: 9999px; background: #0F766E; display: inline-block;
+  animation: bsDot 1s ease-in-out infinite;
+}
+.bs-typing i:nth-child(2) { animation-delay: 0.15s; }
+.bs-typing i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bsDot {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-3px); }
+}
+@media (prefers-color-scheme: dark) {
+  .bs-skeleton { background: linear-gradient(90deg, #2E2A26 0%, #3D3833 40%, #2E2A26 80%); background-size: 200% 100%; }
+  .bs-typing i { background: #5EEAD4; }
+  .hover\:bg-\[\#0F766E\]:hover { background-color: #0F766E !important; }
+  .hover\:text-white:hover { color: #FFFFFF !important; }
+  .border-2.border-\[\#0F766E\] { border-color: #14B8A6 !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bs-skeleton, .bs-typing i { animation: none; }
+}
