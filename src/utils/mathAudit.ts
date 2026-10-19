@@ -1,12 +1,6 @@
 import { BillData, BillLine, AuditedBill, RawBillLine } from '../types/bill';
+import { normalizeCurrency, roundMoney, formatMoney } from './money';
 
-export const KNOWN_TAX_RATES = {
-  INDIA_GST: 18,
-  BAHRAIN_VAT: 10,
-  UAE_VAT: 5,
-  SAUDI_VAT: 15,
-  UK_VAT: 20,
-};
 
 // Rule A: Structural and summary line patterns that MUST NEVER be treated as charge line items
 const STRUCTURAL_PATTERNS = [
@@ -98,52 +92,43 @@ export function auditBillData(
   }
 
   // 1. Plain TS sum of legitimate line items
-  const linesTotal = round2(
-    chargeLines.reduce((acc, line) => acc + (line.amount || 0), 0)
+  const currency = normalizeCurrency(bill.currency);
+  const linesTotal = roundMoney(
+    chargeLines.reduce((acc, line) => acc + (line.amount || 0), 0),
+    currency
   );
 
-  // 2. Tax identification & calculation
-  let taxRate = bill.tax_rate ?? 0;
-  if (!taxRate) {
-    if (
-      bill.currency === '₹' ||
-      bill.currency === 'INR' ||
-      /jio|airtel|vi|vodafone|bsnl/i.test(bill.provider)
-    ) {
-      taxRate = KNOWN_TAX_RATES.INDIA_GST;
-    } else if (
-      bill.currency === 'BHD' ||
-      /zain|batelco|stc bahrain/i.test(bill.provider)
-    ) {
-      taxRate = KNOWN_TAX_RATES.BAHRAIN_VAT;
-    } else {
-      const impliedDiff = bill.total - linesTotal;
-      if (impliedDiff > 0 && linesTotal > 0) {
-        const implied = round2((impliedDiff / linesTotal) * 100);
-        if (Math.abs(implied - 18) <= 1.0) taxRate = 18;
-        else if (Math.abs(implied - 10) <= 1.0) taxRate = 10;
-        else taxRate = implied;
-      }
-    }
-  }
+  // 2. Tax: works for any country. No country's rate is assumed.
+  const printedRate = bill.tax_rate && bill.tax_rate > 0 ? bill.tax_rate : 0;
+  const statedTax =
+    statedTaxFromLines > 0
+      ? roundMoney(statedTaxFromLines, currency)
+      : bill.tax_amount && bill.tax_amount > 0
+        ? roundMoney(bill.tax_amount, currency)
+        : 0;
 
-  // Calculated expected tax from taxable base
-  const computedTax = round2(linesTotal * (taxRate / 100));
-  const expectedTotal = round2(linesTotal + computedTax);
+  // Rate shown to the user: printed on the bill, else implied by the stated tax amount
+  const taxRate = printedRate
+    ? printedRate
+    : statedTax > 0 && linesTotal > 0
+      ? Math.round((statedTax / linesTotal) * 10000) / 100
+      : 0;
 
-  // Rule B: A line is 'wrong' only if code proves a mismatch:
-  // - tax amount differs from rate x taxable base by more than 1 rupee
-  // - stated total differs from sum of lines + tax by more than 1 rupee
-  const totalDifference = round2(bill.total - expectedTotal);
-  const isTotalMismatch = Math.abs(totalDifference) > 1.0;
+  // Tax code expects: printed rate x taxable base, else whatever tax the bill states
+  const computedTax = printedRate
+    ? roundMoney(linesTotal * (printedRate / 100), currency)
+    : statedTax;
+  const taxUsedForTotal = statedTax > 0 ? statedTax : computedTax;
+  const expectedTotal = roundMoney(linesTotal + taxUsedForTotal, currency);
 
-  let isTaxMismatch = false;
-  if (statedTaxFromLines > 0) {
-    const taxDiff = Math.abs(statedTaxFromLines - computedTax);
-    if (taxDiff > 1.0) {
-      isTaxMismatch = true;
-    }
-  }
+  // Rule B: 'wrong' only when code proves a mismatch (small rounding tolerance)
+  const tolerance = (base: number) => Math.max(0.05, Math.abs(base) * 0.002);
+  const totalDifference = roundMoney(bill.total - expectedTotal, currency);
+  const isTotalMismatch = Math.abs(totalDifference) > tolerance(expectedTotal);
+
+  // Tax is only judged when the bill prints its rate AND states the tax amount
+  const isTaxMismatch =
+    printedRate > 0 && statedTax > 0 && Math.abs(statedTax - computedTax) > tolerance(computedTax);
 
   const isTotalValid = !isTotalMismatch;
   const isTaxValid = !isTaxMismatch;
@@ -152,7 +137,7 @@ export function auditBillData(
   // Gap vs usual monthly amount (if provided)
   const gapVsUsual =
     usualAmount !== undefined && usualAmount > 0
-      ? round2(bill.total - usualAmount)
+      ? roundMoney(bill.total - usualAmount, currency)
       : undefined;
 
   // Rule C: If NO last month bill was uploaded, do NOT treat any line as new
@@ -198,7 +183,7 @@ export function auditBillData(
     return {
       id: `line-${idx}-${line.label.slice(0, 10).replace(/\s+/g, '_')}`,
       label: line.label,
-      amount: round2(line.amount),
+      amount: roundMoney(line.amount, currency),
       status,
       reasons,
       isNewVsLastMonth,
@@ -210,6 +195,25 @@ export function auditBillData(
     };
   });
 
+  // If code proves the tax is wrong (printed rate x taxable base != tax charged), flag it
+  if (isTaxMismatch) {
+    auditedLines.push({
+      id: 'math-mismatch-tax',
+      label: `Tax charged (${printedRate}%)`,
+      amount: statedTax,
+      status: 'wrong',
+      reasons: [
+        `Tax charged is ${formatMoney(statedTax, currency)}, but ${printedRate}% of ${formatMoney(
+          linesTotal,
+          currency
+        )} is ${formatMoney(computedTax, currency)}`,
+      ],
+      isMathMismatch: true,
+      userRecognized: false,
+      page: 1,
+    });
+  }
+
   // If code proves a mathematical mismatch (Rule B), add a flagged discrepancy line
   if (isTotalMismatch) {
     auditedLines.push({
@@ -218,8 +222,9 @@ export function auditBillData(
       amount: Math.abs(totalDifference),
       status: 'wrong',
       reasons: [
-        `Bill total differs from sum of charges and tax by ${bill.currency || '₹'}${Math.abs(
-          totalDifference
+        `Bill total differs from sum of charges and tax by ${formatMoney(
+          Math.abs(totalDifference),
+          currency
         )}`,
       ],
       isMathMismatch: true,
@@ -235,7 +240,7 @@ export function auditBillData(
     provider: bill.provider || 'Service Provider',
     period: bill.period || 'Current Billing Cycle',
     dueDate: bill.due_date || 'Due upon receipt',
-    currency: bill.currency || '₹',
+    currency,
     reportedTotal: bill.total,
     linesTotal,
     detectedTaxRate: taxRate,
