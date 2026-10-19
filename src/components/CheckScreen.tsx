@@ -98,6 +98,7 @@ export const CheckScreen: React.FC<CheckScreenProps> = ({
           />
         ) : (
           <div className="w-full h-80 flex flex-col items-center justify-center bg-white text-xs text-[#78716C] p-6 text-center">
+            <span className="text-xs text-[#78716C] mb-3">We couldn't show a preview of this file on your device, but the check still ran.</span>
             <span className="font-serif text-2xl text-[#1C1917] mb-2">{audit.provider}</span>
             <span className="text-sm font-medium text-[#1C1917]">Reported total: {formatMoney(audit.reportedTotal)}</span>
             <span className="text-xs text-[#78716C] mt-1">{audit.period}</span>
@@ -105,7 +106,7 @@ export const CheckScreen: React.FC<CheckScreenProps> = ({
         )}
 
         {/* Red ellipse overlay: 3px stroke, no fill, slight padding */}
-        {hasBox && (
+        {hasBox && audit.billImageUrl && (
           <svg
             viewBox="0 0 1000 1000"
             preserveAspectRatio="none"
