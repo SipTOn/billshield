@@ -30,8 +30,10 @@ export async function downloadAnnotatedBill(imageUrl: string, box: number[] | un
     const sy = canvas.height / 1000;
     ctx.beginPath();
     ctx.ellipse(e.cx * sx, e.cy * sy, e.rx * sx, e.ry * sy, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(220, 38, 38, 0.10)';
+    ctx.fill();
     ctx.strokeStyle = '#DC2626';
-    ctx.lineWidth = Math.max(3, Math.round(canvas.width / 250));
+    ctx.lineWidth = Math.max(4, Math.round(canvas.width / 200));
     ctx.stroke();
   }
 
