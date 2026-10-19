@@ -35,8 +35,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
              L 0,16 
              Q 0,0 16,0 
              Z"
-          fill="#FFFFFF"
-          stroke="#EAE4DA"
+          className="rc-paper"
           strokeWidth="1"
         />
 
@@ -45,7 +44,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           x="160"
           y="46"
           textAnchor="middle"
-          fill="#1C1917"
+          className="rc-ink"
           fontSize="24"
           fontFamily="'Instrument Serif', Georgia, serif"
         >
@@ -55,7 +54,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           x="160"
           y="66"
           textAnchor="middle"
-          fill="#A8A29E"
+          className="rc-faint"
           fontSize="11"
           fontFamily="'Inter', system-ui, sans-serif"
           letterSpacing="0.02em"
@@ -69,7 +68,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           y1="86"
           x2="296"
           y2="86"
-          stroke="#EAE4DA"
+          className="rc-rule"
           strokeWidth="1"
           strokeDasharray="4 4"
         />
@@ -80,7 +79,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           <text
             x="28"
             y="122"
-            fill="#78716C"
+            className="rc-muted"
             fontSize="13"
             fontFamily="'Inter', system-ui, sans-serif"
           >
@@ -90,7 +89,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
             x="292"
             y="122"
             textAnchor="end"
-            fill="#1C1917"
+            className="rc-ink"
             fontWeight="500"
             fontSize="13"
             fontFamily="'Inter', system-ui, sans-serif"
@@ -102,7 +101,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           <text
             x="28"
             y="162"
-            fill="#78716C"
+            className="rc-muted"
             fontSize="13"
             fontFamily="'Inter', system-ui, sans-serif"
           >
@@ -112,7 +111,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
             x="292"
             y="162"
             textAnchor="end"
-            fill="#1C1917"
+            className="rc-ink"
             fontWeight="500"
             fontSize="13"
             fontFamily="'Inter', system-ui, sans-serif"
@@ -124,7 +123,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           <text
             x="28"
             y="204"
-            fill="#1C1917"
+            className="rc-ink"
             fontWeight="500"
             fontSize="13"
             fontFamily="'Inter', system-ui, sans-serif"
@@ -135,7 +134,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
             x="292"
             y="204"
             textAnchor="end"
-            fill="#1C1917"
+            className="rc-ink"
             fontWeight="600"
             fontSize="13"
             fontFamily="'Inter', system-ui, sans-serif"
@@ -149,7 +148,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
             cy="200"
             rx="146"
             ry="20"
-            stroke="#DC2626"
+            className="rc-circle"
             strokeWidth="3"
             strokeLinecap="round"
             fill="none"
@@ -160,7 +159,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           <text
             x="28"
             y="246"
-            fill="#78716C"
+            className="rc-muted"
             fontSize="13"
             fontFamily="'Inter', system-ui, sans-serif"
           >
@@ -170,7 +169,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
             x="292"
             y="246"
             textAnchor="end"
-            fill="#1C1917"
+            className="rc-ink"
             fontWeight="500"
             fontSize="13"
             fontFamily="'Inter', system-ui, sans-serif"
@@ -185,7 +184,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           y1="274"
           x2="296"
           y2="274"
-          stroke="#EAE4DA"
+          className="rc-rule"
           strokeWidth="1"
           strokeDasharray="4 4"
         />
@@ -194,7 +193,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
         <text
           x="28"
           y="312"
-          fill="#1C1917"
+          className="rc-ink"
           fontSize="22"
           fontFamily="'Instrument Serif', Georgia, serif"
         >
@@ -204,7 +203,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           x="292"
           y="312"
           textAnchor="end"
-          fill="#1C1917"
+          className="rc-ink"
           fontWeight="500"
           fontSize="22"
           fontFamily="'Instrument Serif', Georgia, serif"
