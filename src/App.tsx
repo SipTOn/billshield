@@ -12,6 +12,7 @@ import { computeWordDiff, WordDiffResult } from './utils/wordDiff';
 import { getAuditHistory, saveAuditToHistory, clearAuditHistory } from './utils/historyStorage';
 import { renderPdfPageToDataUrl } from './utils/pdfRenderer';
 import { saveCheckToSupabase } from './utils/saveToSupabase';
+import { setBillSource } from './utils/pageImages';
 
 export default function App() {
   const [screen, setScreen] = useState<NavStep>('upload');
@@ -118,6 +119,7 @@ export default function App() {
       if (billImageUrl) {
         audited.billImageUrl = billImageUrl;
       }
+      setBillSource({ data: params.file.data, mimeType: params.file.mimeType }, billImageUrl);
 
       setAuditedBill(audited);
       if (audited.flaggedLines.length > 0) {
