@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { formatMoney as fmtMoney } from '../utils/money';
 import { X, Trash2, Calendar, FileText, CheckCircle2, AlertTriangle, Copy, Check, Search } from 'lucide-react';
 import { AuditHistoryRecord } from '../types/bill';
 
@@ -121,7 +122,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                     </span>
                   </div>
                   <span className="font-serif text-base text-[#1C1917]">
-                    {rec.currency}{rec.total.toFixed(2)}
+                    {fmtMoney(rec.total, rec.currency)}
                   </span>
                 </div>
 

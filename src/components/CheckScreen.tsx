@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatMoney as fmtMoney } from '../utils/money';
 import { AuditedBill, BillLine } from '../types/bill';
 import { X, ZoomIn, CheckCircle2 } from 'lucide-react';
 import { round2 } from '../utils/mathAudit';
@@ -25,12 +26,7 @@ export const CheckScreen: React.FC<CheckScreenProps> = ({
   // Primary flagged line
   const currentFlagged = activeFlagged[0];
 
-  const formatMoney = (amount: number) => {
-    return `${audit.currency}${amount.toLocaleString('en-IN', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  };
+  const formatMoney = (amount: number) => fmtMoney(amount, audit.currency);
 
   const getShortReason = (line: BillLine) => {
     if (line.reasons && line.reasons.length > 0) {
@@ -190,7 +186,7 @@ export const CheckScreen: React.FC<CheckScreenProps> = ({
               {audit.gapVsUsual !== undefined && (
                 <div className="flex items-center justify-between pt-1">
                   <span>Gap vs your usual bill:</span>
-                  <span className="text-[#0F766E] font-medium">+{formatMoney(audit.gapVsUsual)}</span>
+                  <span className="text-[#0F766E] font-medium">{audit.gapVsUsual >= 0 ? '+' : '−'}{formatMoney(Math.abs(audit.gapVsUsual))}</span>
                 </div>
               )}
             </div>

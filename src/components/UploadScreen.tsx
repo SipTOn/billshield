@@ -209,7 +209,7 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({
                 {/* Usual monthly */}
                 <div>
                   <label className="block text-xs text-[#78716C] mb-1">
-                    Usual monthly
+                    Usual monthly <span className="text-[#A8A29E]">(optional)</span>
                   </label>
                   <input
                     type="number"
@@ -224,7 +224,7 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({
                 {/* Last month's bill */}
                 <div>
                   <label className="block text-xs text-[#78716C] mb-1">
-                    Last month's bill
+                    Last month's bill <span className="text-[#A8A29E]">(optional)</span>
                   </label>
                   {lastMonthFile ? (
                     <div className="h-10 px-2.5 bg-white border border-[#EAE4DA] rounded-xl flex items-center justify-between text-xs">

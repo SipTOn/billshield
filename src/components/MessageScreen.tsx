@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatMoney as fmtMoney } from '../utils/money';
 import { AuditedBill, BillLine } from '../types/bill';
 import { Copy, Check } from 'lucide-react';
 
@@ -22,12 +23,7 @@ export const MessageScreen: React.FC<MessageScreenProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(!savedMessage);
   const [copied, setCopied] = useState<boolean>(false);
 
-  const formatMoney = (amount: number) => {
-    return `${audit.currency}${amount.toLocaleString('en-IN', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  };
+  const formatMoney = (amount: number) => fmtMoney(amount, audit.currency);
 
   useEffect(() => {
     if (savedMessage) {
@@ -56,7 +52,7 @@ export const MessageScreen: React.FC<MessageScreenProps> = ({
               : ''
           }.\n\nI noticed an unexplained line item "${flaggedLine.label}" of ${formatMoney(
             flaggedLine.amount
-          )}${audit.detectedTaxRate > 0 ? ` (exclusive of ${audit.detectedTaxRate}% GST/VAT)` : ''}. Could you please provide an itemized breakdown of what this charge entails and why it was added?\n\nThank you for your assistance.`;
+          )}${audit.detectedTaxRate > 0 ? ` (exclusive of ${audit.detectedTaxRate}% tax)` : ''}. Could you please provide an itemized breakdown of what this charge entails and why it was added?\n\nThank you for your assistance.`;
 
       try {
         const response = await fetch('/api/generate-message', {
