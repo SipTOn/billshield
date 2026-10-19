@@ -19,6 +19,7 @@ export default async function handler(req: any, res: any) {
 STRICT PRIVACY RULES:
 - NEVER extract or include customer name, phone number, account number, statement number, customer ID, address, email, card numbers, or UPI IDs.
 - Extract ONLY the high-level invoice metadata and the financial line items.
+- Bills can be from any country and in any currency. Keep amounts exactly as printed (do not convert currency).
 - The 'lines' array must ONLY contain individual service, product, and usage charge line items before tax.
 - DO NOT include summary or structural lines in 'lines' (such as Subtotal, Total, Total Amount Payable, GST, CGST, SGST, IGST, VAT, Tax lines, Previous Balance, Payments Received, or Rounding off). Put those into the top-level 'total' and 'tax_rate' fields instead.
 - For each charge line item, detect its visual bounding box coordinates on the document 'box_2d': [ymin, xmin, ymax, xmax] normalised from 0 to 1000 (where 0 is top/left, 1000 is bottom/right), and 'page' (integer page number, starting from 1).
@@ -28,9 +29,10 @@ Format your output strictly according to this JSON structure:
 "provider": string,
 "period": string,
 "due_date": string,
-"currency": string,
-"total": number,
-"tax_rate": number,
+"currency": string (ISO 4217 code of the currency printed on the bill, e.g. INR, BHD, AED, SAR, USD, GBP, EUR),
+"total": number (final amount payable),
+"tax_rate": number (the tax percentage ONLY if printed on the bill, e.g. 18 for GST 18%, 10 for VAT 10%; 0 if not printed. Never guess by country),
+"tax_amount": number (total tax amount printed on the bill: GST/CGST+SGST/IGST/VAT/sales tax combined; 0 if none),
 "lines": [ { "label": string, "amount": number, "box_2d": [ymin, xmin, ymax, xmax], "page": integer } ]
 }`;
 
@@ -48,6 +50,7 @@ Format your output strictly according to this JSON structure:
             currency: { type: Type.STRING },
             total: { type: Type.NUMBER },
             tax_rate: { type: Type.NUMBER },
+            tax_amount: { type: Type.NUMBER },
             lines: {
               type: Type.ARRAY,
               items: {

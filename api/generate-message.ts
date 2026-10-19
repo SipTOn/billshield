@@ -18,14 +18,27 @@ function validateMessageNumbers(message: string, allowed: number[]): boolean {
   return true;
 }
 
-function buildFallback(b: any): string {
-  const { provider, period, status, lineLabel, lineAmount, total, currency = '₹', usualAmount, gapVsUsual } = b;
-  if (status === 'wrong') {
-    return `Dear ${provider} Team,\n\nI am writing regarding my bill for ${period || 'the current cycle'} with a total of ${currency}${total}.\n\nUpon checking the line items, I noticed a discrepancy with "${lineLabel}" (${currency}${lineAmount}). The calculated total does not align with the stated charges. Could you please review this charge and apply the necessary correction to my account?\n\nThank you for your prompt assistance.`;
+function money(amount: any, currency: string): string {
+  const n = Number(amount);
+  if (!Number.isFinite(n)) return `${currency}${amount}`;
+  const code = (currency || '').trim().toUpperCase();
+  if (/^[A-Z]{3}$/.test(code)) {
+    try {
+      return new Intl.NumberFormat('en', { style: 'currency', currency: code, currencyDisplay: 'narrowSymbol' }).format(n);
+    } catch {}
   }
-  return `Dear ${provider} Team,\n\nI am writing regarding my bill for ${period || 'the current cycle'} totaling ${currency}${total}${
-    gapVsUsual ? `, which is ${currency}${gapVsUsual} higher than my usual ${currency}${usualAmount}` : ''
-  }.\n\nI noticed an unexplained line item "${lineLabel}" for ${currency}${lineAmount}. Could you please provide an itemized breakdown of what this charge covers?\n\nThank you for your assistance.`;
+  return `${currency}${n}`;
+}
+
+function buildFallback(b: any): string {
+  const { provider, period, status, lineLabel, lineAmount, total, currency = 'INR', usualAmount, gapVsUsual } = b;
+  const m = (x: any) => money(x, currency);
+  if (status === 'wrong') {
+    return `Dear ${provider} Team,\n\nI am writing regarding my bill for ${period || 'the current cycle'} with a total of ${m(total)}.\n\nUpon checking the line items, I noticed a discrepancy with "${lineLabel}" (${m(lineAmount)}). The calculated total does not align with the stated charges. Could you please review this charge and apply the necessary correction to my account?\n\nThank you for your prompt assistance.`;
+  }
+  return `Dear ${provider} Team,\n\nI am writing regarding my bill for ${period || 'the current cycle'} totaling ${m(total)}${
+    gapVsUsual ? `, which is ${m(gapVsUsual)} higher than my usual ${m(usualAmount)}` : ''
+  }.\n\nI noticed an unexplained line item "${lineLabel}" for ${m(lineAmount)}. Could you please provide an itemized breakdown of what this charge covers?\n\nThank you for your assistance.`;
 }
 
 export default async function handler(req: any, res: any) {
@@ -37,7 +50,7 @@ export default async function handler(req: any, res: any) {
   const fallback = buildFallback(body);
 
   try {
-    const { provider, period, status, lineLabel, lineAmount, total, currency = '₹', usualAmount, gapVsUsual, taxRate = 18, facts } = body;
+    const { provider, period, status, lineLabel, lineAmount, total, currency = 'INR', usualAmount, gapVsUsual, taxRate = 0, facts } = body;
 
     const allowedNumbers: number[] = [
       total,
@@ -61,11 +74,12 @@ CRITICAL RULES:
 
     const userPrompt = `Provider: ${provider}
 Billing Period: ${period || 'Current Period'}
-Total Bill Amount: ${currency}${total}
-Flagged Line Item: "${lineLabel}" (${currency}${lineAmount})
+Currency: ${currency} (write amounts with this currency, never convert)
+Total Bill Amount: ${money(total, currency)}
+Flagged Line Item: "${lineLabel}" (${money(lineAmount, currency)})
 Status: ${status}
-${usualAmount ? `Usual Monthly Bill: ${currency}${usualAmount}` : ''}
-${gapVsUsual ? `Unexplained Difference: ${currency}${gapVsUsual}` : ''}
+${usualAmount ? `Usual Monthly Bill: ${money(usualAmount, currency)}` : ''}
+${gapVsUsual ? `Unexplained Difference: ${money(gapVsUsual, currency)}` : ''}
 ${taxRate ? `Tax Rate: ${taxRate}%` : ''}
 
 Draft the short inquiry message now.`;
