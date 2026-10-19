@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, X, FileUp, Calculator, Send } from 'lucide-react';
 import { RawBillLine } from '../types/bill';
 import { ReceiptIllustration } from './ReceiptIllustration';
+import { CheckingProgress } from './CheckingProgress';
 
 interface UploadScreenProps {
   onAuditStart: (params: {
@@ -9,6 +10,7 @@ interface UploadScreenProps {
     usualAmount?: number;
     lastMonthLines?: RawBillLine[];
     lastMonthFileName?: string;
+    lastMonthFile?: { data: string; mimeType: string };
   }) => void;
   isLoading: boolean;
   savedFile?: { data: string; mimeType: string; name: string } | null;
@@ -55,15 +57,48 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({
         return;
       }
       const reader = new FileReader();
-      reader.onload = () => {
+      reader.onload = async () => {
         const result = reader.result as string;
-        const base64 = result.split(',')[1];
-        resolve({ base64, mimeType: file.type });
+        if (file.type.startsWith('image/')) {
+          // Shrink big photos before sending: faster upload, faster AI reading
+          const shrunk = await shrinkImage(result).catch(() => null);
+          if (shrunk) {
+            resolve({ base64: shrunk.split(',')[1], mimeType: 'image/jpeg' });
+            return;
+          }
+        } else if (file.size > 4 * 1024 * 1024) {
+          reject(new Error('PDF is over 4 MB. Please upload a smaller PDF or a photo of the bill.'));
+          return;
+        }
+        resolve({ base64: result.split(',')[1], mimeType: file.type });
       };
       reader.onerror = () => reject(new Error('Failed to read file.'));
       reader.readAsDataURL(file);
     });
   };
+
+  const shrinkImage = (dataUrl: string, maxSide = 1800, quality = 0.85): Promise<string | null> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        if (scale === 1 && dataUrl.length < 1_500_000) {
+          resolve(null); // already small: keep the original
+          return;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(null);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
 
   const onCurrentFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMsg(null);
@@ -122,6 +157,9 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({
       },
       usualAmount: parsedUsual,
       lastMonthFileName: lastMonthFile?.file.name || savedLastMonthFileName,
+      lastMonthFile: lastMonthFile
+        ? { data: lastMonthFile.base64, mimeType: lastMonthFile.mimeType }
+        : undefined,
     });
   };
 
@@ -146,8 +184,19 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({
             </div>
           )}
 
+          {isLoading && (
+            <CheckingProgress
+              fileName={currentFile?.name}
+              previewUrl={
+                currentFile && currentFile.mimeType.startsWith('image/')
+                  ? `data:${currentFile.mimeType};base64,${currentFile.data}`
+                  : undefined
+              }
+            />
+          )}
+
           {/* Upload card: white with 1px #EAE4DA border and 16px radius */}
-          <div className="bg-white border border-[#EAE4DA] rounded-[16px] p-5 sm:p-6 shadow-[0_2px_8px_rgba(28,25,23,0.04)]">
+          <div className={`${isLoading ? 'hidden' : ''} bg-white border border-[#EAE4DA] rounded-[16px] p-5 sm:p-6 shadow-[0_2px_8px_rgba(28,25,23,0.04)]`}>
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Drop zone with dashed teal border */}
               {currentFile ? (
@@ -205,10 +254,10 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({
               )}
 
               {/* Two optional fields side by side */}
-              <div className="grid grid-cols-2 gap-3 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 items-end">
                 {/* Usual monthly */}
                 <div>
-                  <label className="block text-xs text-[#78716C] mb-1">
+                  <label className="block text-xs text-[#78716C] mb-1 whitespace-nowrap">
                     Usual monthly <span className="text-[#A8A29E]">(optional)</span>
                   </label>
                   <input
@@ -223,7 +272,7 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({
 
                 {/* Last month's bill */}
                 <div>
-                  <label className="block text-xs text-[#78716C] mb-1">
+                  <label className="block text-xs text-[#78716C] mb-1 whitespace-nowrap">
                     Last month's bill <span className="text-[#A8A29E]">(optional)</span>
                   </label>
                   {lastMonthFile ? (
