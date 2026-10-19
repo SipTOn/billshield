@@ -42,10 +42,14 @@ export async function renderPdfPageToDataUrl(
     throw new Error('Unable to create canvas 2D rendering context');
   }
 
+  // Paint white paper first: PDF pages are transparent, which hides black text on dark screens
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
   await page.render({
     canvasContext: ctx,
     viewport,
     canvas,
   } as any).promise;
-  return canvas.toDataURL('image/png');
+  return canvas.toDataURL('image/jpeg', 0.92);
 }
