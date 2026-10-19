@@ -1,13 +1,19 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 
-export const ReceiptIllustration: React.FC<{ className?: string }> = ({ className = '' }) => {
-  return (
-    <div
-      className={`relative w-full max-w-[320px] mx-auto select-none transform -rotate-2 hover:rotate-0 transition-transform duration-300 drop-shadow-[0_8px_24px_rgba(28,25,23,0.07)] ${className}`}
-    >
+// The sample receipt is shown as a picture (not live SVG), because phone browsers like
+// Samsung Internet force their own dark mode on page content but leave pictures alone.
+type Palette = {
+  paper: string; paperStroke: string; ink: string; muted: string; faint: string; rule: string; circle: string;
+};
+
+const LIGHT: Palette = { paper: '#FFFFFF', paperStroke: '#EAE4DA', ink: '#1C1917', muted: '#57534E', faint: '#78716C', rule: '#EAE4DA', circle: '#DC2626' };
+const DARK: Palette = { paper: '#26221F', paperStroke: '#3A3530', ink: '#FAF7F2', muted: '#E7E2DC', faint: '#C9C2BA', rule: '#4A453F', circle: '#F87171' };
+
+const ReceiptSvg: React.FC<{ P: Palette }> = ({ P }) => (
       <svg
         viewBox="0 0 320 372"
-        className="w-full h-auto block overflow-visible"
+        width="320" height="372"
         xmlns="http://www.w3.org/2000/svg"
       >
         {/* Receipt paper shape with rounded top corners and zig-zag torn bottom edge */}
@@ -35,7 +41,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
              L 0,16 
              Q 0,0 16,0 
              Z"
-          className="rc-paper"
+          fill={P.paper} stroke={P.paperStroke}
           strokeWidth="1"
         />
 
@@ -44,7 +50,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           x="160"
           y="46"
           textAnchor="middle"
-          className="rc-ink"
+          fill={P.ink}
           fontSize="24"
           fontFamily="'Instrument Serif', Georgia, serif"
         >
@@ -54,7 +60,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           x="160"
           y="66"
           textAnchor="middle"
-          className="rc-faint"
+          fill={P.faint}
           fontSize="11"
           fontFamily="'Inter', system-ui, sans-serif"
           letterSpacing="0.02em"
@@ -68,7 +74,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           y1="86"
           x2="296"
           y2="86"
-          className="rc-rule"
+          stroke={P.rule}
           strokeWidth="1"
           strokeDasharray="4 4"
         />
@@ -79,7 +85,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           <text
             x="28"
             y="122"
-            className="rc-muted"
+            fill={P.muted}
             fontSize="13"
             fontFamily="'Inter', system-ui, sans-serif"
           >
@@ -89,7 +95,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
             x="292"
             y="122"
             textAnchor="end"
-            className="rc-ink"
+            fill={P.ink}
             fontWeight="500"
             fontSize="13"
             fontFamily="'Inter', system-ui, sans-serif"
@@ -101,7 +107,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           <text
             x="28"
             y="162"
-            className="rc-muted"
+            fill={P.muted}
             fontSize="13"
             fontFamily="'Inter', system-ui, sans-serif"
           >
@@ -111,7 +117,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
             x="292"
             y="162"
             textAnchor="end"
-            className="rc-ink"
+            fill={P.ink}
             fontWeight="500"
             fontSize="13"
             fontFamily="'Inter', system-ui, sans-serif"
@@ -123,7 +129,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           <text
             x="28"
             y="204"
-            className="rc-ink"
+            fill={P.ink}
             fontWeight="500"
             fontSize="13"
             fontFamily="'Inter', system-ui, sans-serif"
@@ -134,7 +140,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
             x="292"
             y="204"
             textAnchor="end"
-            className="rc-ink"
+            fill={P.ink}
             fontWeight="600"
             fontSize="13"
             fontFamily="'Inter', system-ui, sans-serif"
@@ -148,7 +154,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
             cy="200"
             rx="146"
             ry="20"
-            className="rc-circle"
+            stroke={P.circle}
             strokeWidth="3"
             strokeLinecap="round"
             fill="none"
@@ -159,7 +165,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           <text
             x="28"
             y="246"
-            className="rc-muted"
+            fill={P.muted}
             fontSize="13"
             fontFamily="'Inter', system-ui, sans-serif"
           >
@@ -169,7 +175,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
             x="292"
             y="246"
             textAnchor="end"
-            className="rc-ink"
+            fill={P.ink}
             fontWeight="500"
             fontSize="13"
             fontFamily="'Inter', system-ui, sans-serif"
@@ -184,7 +190,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           y1="274"
           x2="296"
           y2="274"
-          className="rc-rule"
+          stroke={P.rule}
           strokeWidth="1"
           strokeDasharray="4 4"
         />
@@ -193,7 +199,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
         <text
           x="28"
           y="312"
-          className="rc-ink"
+          fill={P.ink}
           fontSize="22"
           fontFamily="'Instrument Serif', Georgia, serif"
         >
@@ -203,7 +209,7 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           x="292"
           y="312"
           textAnchor="end"
-          className="rc-ink"
+          fill={P.ink}
           fontWeight="500"
           fontSize="22"
           fontFamily="'Instrument Serif', Georgia, serif"
@@ -211,6 +217,30 @@ export const ReceiptIllustration: React.FC<{ className?: string }> = ({ classNam
           ₹1,414.82
         </text>
       </svg>
+);
+
+function toDataUri(P: Palette): string {
+  const markup = renderToStaticMarkup(<ReceiptSvg P={P} />);
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+}
+
+export const ReceiptIllustration: React.FC<{ className?: string }> = ({ className = '' }) => {
+  const [light, dark] = useMemo(() => [toDataUri(LIGHT), toDataUri(DARK)], []);
+  return (
+    <div
+      className={`relative w-full max-w-[320px] mx-auto select-none transform -rotate-2 hover:rotate-0 transition-transform duration-300 drop-shadow-[0_8px_24px_rgba(28,25,23,0.07)] ${className}`}
+    >
+      <picture>
+        <source srcSet={dark} media="(prefers-color-scheme: dark)" />
+        <img
+          src={light}
+          alt="Example bill with the 'Other charges' line circled in red"
+          width={320}
+          height={372}
+          className="w-full h-auto block"
+          draggable={false}
+        />
+      </picture>
     </div>
   );
 };

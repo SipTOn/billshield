@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { formatMoney as fmtMoney, roundMoney } from '../utils/money';
+import { ellipseFromBox } from '../utils/annotateBill';
 import { AuditedBill, BillLine } from '../types/bill';
 import { X, ZoomIn, CheckCircle2 } from 'lucide-react';
 import { round2 } from '../utils/mathAudit';
@@ -68,13 +69,7 @@ export const CheckScreen: React.FC<CheckScreenProps> = ({
   }
 
   // Calculate red ellipse coordinates from box_2d [ymin, xmin, ymax, xmax] 0-1000
-  const box = currentFlagged.box_2d;
-  const hasBox = Boolean(box && box.length === 4);
-  const [ymin, xmin, ymax, xmax] = hasBox && box ? box : [455, 60, 510, 940];
-  const cx = (xmin + xmax) / 2;
-  const cy = (ymin + ymax) / 2;
-  const rx = Math.max(20, (xmax - xmin) / 2 + 12);
-  const ry = Math.max(16, (ymax - ymin) / 2 + 8);
+  const { has: hasBox, cx, cy, rx, ry } = ellipseFromBox(currentFlagged.box_2d);
 
   // Computed facts for the flagged line
   const taxRate = audit.detectedTaxRate || 0;

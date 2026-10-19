@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { formatMoney as fmtMoney, roundMoney } from '../utils/money';
 import { AuditedBill, BillLine } from '../types/bill';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Download } from 'lucide-react';
+import { downloadAnnotatedBill } from '../utils/annotateBill';
 
 interface MessageScreenProps {
   audit: AuditedBill;
@@ -18,6 +19,7 @@ export const MessageScreen: React.FC<MessageScreenProps> = ({
   onMessageChange,
   onSent,
 }) => {
+  const [downloadState, setDownloadState] = useState<'idle' | 'working' | 'done' | 'error'>('idle');
   const [initialDraft, setInitialDraft] = useState<string>(savedMessage || '');
   const [editableMessage, setEditableMessage] = useState<string>(savedMessage || '');
   const [isLoading, setIsLoading] = useState<boolean>(!savedMessage);
@@ -173,6 +175,35 @@ export const MessageScreen: React.FC<MessageScreenProps> = ({
           )}
         </div>
       </div>
+
+      {/* Download the bill with the red circle, to attach to the message */}
+      {audit.billImageUrl && (
+        <div className="mb-4 flex justify-center">
+          <button
+            type="button"
+            onClick={async () => {
+              setDownloadState('working');
+              try {
+                const safe = (audit.provider || 'bill').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+                await downloadAnnotatedBill(audit.billImageUrl!, flaggedLine.box_2d, `${safe}-bill-flagged.png`);
+                setDownloadState('done');
+              } catch {
+                setDownloadState('error');
+              }
+            }}
+            className="inline-flex items-center gap-2 text-sm font-medium text-[#0F766E] hover:underline"
+          >
+            <Download className="w-4 h-4" />
+            {downloadState === 'working'
+              ? 'Preparing image…'
+              : downloadState === 'done'
+                ? 'Saved. Attach it to your message'
+                : downloadState === 'error'
+                  ? 'Could not save. Try again'
+                  : 'Download bill with red circle'}
+          </button>
+        </div>
+      )}
 
       {/* Action buttons: Copy (outlined pill) and 'I sent it' (teal pill) */}
       <div className="flex items-center gap-4">
