@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { formatMoney as fmtMoney, roundMoney } from '../utils/money';
 import { ellipseFromBox } from '../utils/annotateBill';
 import { prefetchDraft } from '../utils/draftService';
+import { usePageImage } from '../utils/pageImages';
 import { AuditedBill, BillLine } from '../types/bill';
 import { X, ZoomIn, CheckCircle2 } from 'lucide-react';
 import { round2 } from '../utils/mathAudit';
@@ -27,6 +28,9 @@ export const CheckScreen: React.FC<CheckScreenProps> = ({
 
   // Primary flagged line
   const currentFlagged = activeFlagged[0];
+
+  // The page of the bill the flagged charge is on (multi-page PDFs)
+  const billImage = usePageImage(audit.billImageUrl, currentFlagged?.page);
 
   // Start writing the message in the background while the user decides
   useEffect(() => {
@@ -91,9 +95,9 @@ export const CheckScreen: React.FC<CheckScreenProps> = ({
           !inZoom ? 'cursor-pointer group' : ''
         }`}
       >
-        {audit.billImageUrl ? (
+        {billImage ? (
           <img
-            src={audit.billImageUrl}
+            src={billImage}
             alt="Bill Statement"
             className="w-full h-auto block object-contain"
           />
@@ -107,7 +111,7 @@ export const CheckScreen: React.FC<CheckScreenProps> = ({
         )}
 
         {/* Red ellipse overlay: 3px stroke, no fill, slight padding */}
-        {hasBox && audit.billImageUrl && (
+        {hasBox && billImage && (
           <svg
             viewBox="0 0 1000 1000"
             preserveAspectRatio="none"
@@ -118,14 +122,21 @@ export const CheckScreen: React.FC<CheckScreenProps> = ({
               cy={cy}
               rx={rx}
               ry={ry}
+              fill="rgba(220, 38, 38, 0.10)"
               stroke="#DC2626"
               strokeWidth="3"
-              fill="none"
+              vectorEffect="non-scaling-stroke"
             />
           </svg>
         )}
 
-        {!inZoom && audit.billImageUrl && (
+        {!hasBox && billImage && !inZoom && (
+          <div className="absolute bottom-2 left-2 right-2 text-center text-[11px] px-2 py-1 rounded-md bg-black/60 text-white">
+            We couldn't pinpoint this line on the picture. Look for "{currentFlagged.label}".
+          </div>
+        )}
+
+        {!inZoom && billImage && (
           <div className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/40 text-white opacity-0 group-hover:opacity-100 sm:opacity-0 transition-opacity flex items-center gap-1 text-[10px]">
             <ZoomIn className="w-3.5 h-3.5" />
             <span>Tap to zoom</span>
@@ -143,7 +154,7 @@ export const CheckScreen: React.FC<CheckScreenProps> = ({
         <div className="lg:col-span-7">
           <div className="mb-2">
             {renderBillContent(false)}
-            {audit.billImageUrl && (
+            {billImage && (
               <p className="text-[11px] text-[#A8A29E] text-center mt-2 sm:hidden">
                 Tap image to zoom
               </p>
@@ -272,7 +283,7 @@ export const CheckScreen: React.FC<CheckScreenProps> = ({
       </div>
 
       {/* Zoom Lightbox Modal */}
-      {isZoomed && audit.billImageUrl && (
+      {isZoomed && billImage && (
         <div
           className="fixed inset-0 z-50 bg-black/85 flex flex-col items-center justify-center p-3"
           onClick={() => setIsZoomed(false)}

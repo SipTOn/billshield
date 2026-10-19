@@ -4,6 +4,7 @@ import { AuditedBill, BillLine } from '../types/bill';
 import { Copy, Check, Download, FileImage } from 'lucide-react';
 import { downloadAnnotatedBill } from '../utils/annotateBill';
 import { getDraft } from '../utils/draftService';
+import { usePageImage } from '../utils/pageImages';
 import { DraftingProgress } from './DraftingProgress';
 
 interface MessageScreenProps {
@@ -21,6 +22,7 @@ export const MessageScreen: React.FC<MessageScreenProps> = ({
   onMessageChange,
   onSent,
 }) => {
+  const billImage = usePageImage(audit.billImageUrl, flaggedLine.page);
   const [downloadState, setDownloadState] = useState<'idle' | 'working' | 'done' | 'error'>('idle');
   const [initialDraft, setInitialDraft] = useState<string>(savedMessage || '');
   const [editableMessage, setEditableMessage] = useState<string>(savedMessage || '');
@@ -144,7 +146,7 @@ export const MessageScreen: React.FC<MessageScreenProps> = ({
       </div>
 
       {/* Evidence: the bill with the disputed charge marked, to attach to the message */}
-      {audit.billImageUrl && (
+      {billImage && (
         <div className="mb-5 p-4 sm:p-5 rounded-[16px] border border-[#EAE4DA] bg-white flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="w-10 h-10 shrink-0 rounded-xl bg-[#F0FDFA] border border-[#0F766E]/20 flex items-center justify-center text-[#0F766E]">
@@ -164,7 +166,7 @@ export const MessageScreen: React.FC<MessageScreenProps> = ({
               setDownloadState('working');
               try {
                 const safe = (audit.provider || 'bill').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-                await downloadAnnotatedBill(audit.billImageUrl!, flaggedLine.box_2d, `${safe}-bill-marked.png`);
+                await downloadAnnotatedBill(billImage!, flaggedLine.box_2d, `${safe}-bill-marked.png`);
                 setDownloadState('done');
               } catch {
                 setDownloadState('error');
