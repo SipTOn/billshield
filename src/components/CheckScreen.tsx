@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatMoney as fmtMoney, roundMoney } from '../utils/money';
 import { ellipseFromBox } from '../utils/annotateBill';
+import { prefetchDraft } from '../utils/draftService';
 import { AuditedBill, BillLine } from '../types/bill';
 import { X, ZoomIn, CheckCircle2 } from 'lucide-react';
 import { round2 } from '../utils/mathAudit';
@@ -26,6 +27,11 @@ export const CheckScreen: React.FC<CheckScreenProps> = ({
 
   // Primary flagged line
   const currentFlagged = activeFlagged[0];
+
+  // Start writing the message in the background while the user decides
+  useEffect(() => {
+    if (currentFlagged && !currentFlagged.userRecognized) prefetchDraft(audit, currentFlagged);
+  }, [audit, currentFlagged?.id]);
 
   const formatMoney = (amount: number) => fmtMoney(amount, audit.currency);
 
@@ -197,7 +203,7 @@ export const CheckScreen: React.FC<CheckScreenProps> = ({
 
               {audit.gapVsUsual !== undefined && (
                 <div className="flex items-center justify-between pt-1">
-                  <span>Gap vs your usual bill:</span>
+                  <span>Gap vs your typical amount:</span>
                   <span className="text-[#0F766E] font-medium">{audit.gapVsUsual >= 0 ? '+' : '−'}{formatMoney(Math.abs(audit.gapVsUsual))}</span>
                 </div>
               )}

@@ -45,7 +45,7 @@ export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({ isOpen, onClos
             <div>
               <p className="font-medium text-[#1C1917]">2. We check the maths</p>
               <p className="text-xs text-[#78716C] mt-0.5 leading-relaxed">
-                All calculations are executed in deterministic code: line sums, tax check, gap vs usual amount, and vague charges.
+                All calculations are executed in deterministic code: line sums, tax check, gap vs your typical monthly amount, and vague charges.
               </p>
             </div>
           </div>

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { formatMoney as fmtMoney, roundMoney } from '../utils/money';
+import { formatMoney as fmtMoney } from '../utils/money';
 import { AuditedBill, BillLine } from '../types/bill';
-import { Copy, Check, Download } from 'lucide-react';
+import { Copy, Check, Download, FileImage } from 'lucide-react';
 import { downloadAnnotatedBill } from '../utils/annotateBill';
+import { getDraft } from '../utils/draftService';
+import { DraftingProgress } from './DraftingProgress';
 
 interface MessageScreenProps {
   audit: AuditedBill;
@@ -57,42 +59,9 @@ export const MessageScreen: React.FC<MessageScreenProps> = ({
           )}${audit.detectedTaxRate > 0 ? ` (exclusive of ${audit.detectedTaxRate}% tax)` : ''}. Could you please provide an itemized breakdown of what this charge entails and why it was added?\n\nThank you for your assistance.`;
 
       try {
-        const response = await fetch('/api/generate-message', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            provider: audit.provider,
-            period: audit.period,
-            status: flaggedLine.status,
-            lineLabel: flaggedLine.label,
-            lineAmount: flaggedLine.amount,
-            total: audit.reportedTotal,
-            currency: audit.currency,
-            usualAmount: audit.usualAmount,
-            gapVsUsual: audit.gapVsUsual,
-            taxRate: audit.detectedTaxRate,
-            facts: {
-              linesTotal: audit.linesTotal,
-              taxAmount: audit.computedTax,
-              lineTaxImpact: flaggedLine.isMathMismatch
-                ? undefined
-                : audit.detectedTaxRate
-                  ? roundMoney((flaggedLine.amount * (100 + audit.detectedTaxRate)) / 100, audit.currency)
-                  : flaggedLine.amount,
-              expectedAmount: flaggedLine.expectedAmount,
-              difference:
-                flaggedLine.difference !== undefined ? Math.abs(flaggedLine.difference) : undefined,
-            },
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Server error');
-        }
-
-        const data = await response.json();
+        const message = await getDraft(audit, flaggedLine);
         if (isMounted) {
-          const finalDraft = data.message || defaultTemplate;
+          const finalDraft = message || defaultTemplate;
           setInitialDraft(finalDraft);
           setEditableMessage(finalDraft);
           setIsLoading(false);
@@ -157,9 +126,7 @@ export const MessageScreen: React.FC<MessageScreenProps> = ({
         {/* Roomy editable body (line-height 1.7, 20px padding) */}
         <div className="p-[20px]">
           {isLoading ? (
-            <div className="h-64 flex items-center justify-center text-xs text-[#A8A29E]">
-              Writing draft with verified figures...
-            </div>
+            <DraftingProgress provider={audit.provider} lineLabel={flaggedLine.label} />
           ) : (
             <textarea
               value={editableMessage}
@@ -176,31 +143,43 @@ export const MessageScreen: React.FC<MessageScreenProps> = ({
         </div>
       </div>
 
-      {/* Download the bill with the red circle, to attach to the message */}
+      {/* Evidence: the bill with the disputed charge marked, to attach to the message */}
       {audit.billImageUrl && (
-        <div className="mb-4 flex justify-center">
+        <div className="mb-5 p-4 sm:p-5 rounded-[16px] border border-[#EAE4DA] bg-white flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="w-10 h-10 shrink-0 rounded-xl bg-[#F0FDFA] border border-[#0F766E]/20 flex items-center justify-center text-[#0F766E]">
+              <FileImage className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-[#1C1917]">Attach proof to your message</p>
+              <p className="text-xs text-[#78716C] mt-0.5">
+                Your bill with "{flaggedLine.label}" marked in red (PNG)
+              </p>
+            </div>
+          </div>
           <button
             type="button"
+            disabled={downloadState === 'working'}
             onClick={async () => {
               setDownloadState('working');
               try {
                 const safe = (audit.provider || 'bill').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-                await downloadAnnotatedBill(audit.billImageUrl!, flaggedLine.box_2d, `${safe}-bill-flagged.png`);
+                await downloadAnnotatedBill(audit.billImageUrl!, flaggedLine.box_2d, `${safe}-bill-marked.png`);
                 setDownloadState('done');
               } catch {
                 setDownloadState('error');
               }
             }}
-            className="inline-flex items-center gap-2 text-sm font-medium text-[#0F766E] hover:underline"
+            className="h-11 px-5 shrink-0 rounded-full border-2 border-[#0F766E] text-[#0F766E] hover:bg-[#0F766E] hover:text-white text-sm font-semibold inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-60"
           >
-            <Download className="w-4 h-4" />
+            {downloadState === 'done' ? <Check className="w-4 h-4" /> : <Download className="w-4 h-4" />}
             {downloadState === 'working'
-              ? 'Preparing image…'
+              ? 'Preparing…'
               : downloadState === 'done'
-                ? 'Saved. Attach it to your message'
+                ? 'Downloaded'
                 : downloadState === 'error'
-                  ? 'Could not save. Try again'
-                  : 'Download bill with red circle'}
+                  ? 'Try again'
+                  : 'Download marked bill'}
           </button>
         </div>
       )}

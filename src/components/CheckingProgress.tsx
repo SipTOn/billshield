@@ -12,7 +12,7 @@ const STEPS = [
 
 const TIPS = [
   'Vague lines like "Other charges" or "Service fee" are the ones people most often can’t explain.',
-  'Promo prices often end quietly after a few months. Your usual amount helps us spot the jump.',
+  'Promo prices often end quietly after a few months. Your typical monthly amount helps us spot the jump.',
   'Add-ons you tried once can keep renewing every month until you cancel them.',
   'Tax should match the rate printed on the bill. We check it with code, not AI.',
   'A polite message with exact numbers gets answered faster than a general complaint.',

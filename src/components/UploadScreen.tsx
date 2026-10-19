@@ -138,6 +138,9 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({
     }
   };
 
+  const [showNudge, setShowNudge] = useState<boolean>(false);
+  const [nudgeShown, setNudgeShown] = useState<boolean>(false);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -146,6 +149,19 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({
       setErrorMsg('Please upload a bill to check.');
       return;
     }
+
+    // Both extras are optional, but people often miss them: ask once, let them skip
+    if (!usualAmount && !lastMonthFile && !savedLastMonthFileName && !nudgeShown) {
+      setNudgeShown(true);
+      setShowNudge(true);
+      return;
+    }
+    runCheck();
+  };
+
+  const runCheck = () => {
+    if (!currentFile) return;
+    setShowNudge(false);
 
     const parsedUsual = usualAmount ? parseFloat(usualAmount) : undefined;
 
@@ -255,10 +271,10 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({
 
               {/* Two optional fields side by side */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 items-end">
-                {/* Usual monthly */}
+                {/* Typical monthly amount */}
                 <div>
                   <label className="block text-xs text-[#78716C] mb-1 whitespace-nowrap">
-                    Usual monthly <span className="text-[#A8A29E]">(optional)</span>
+                    Typical monthly amount <span className="text-[#A8A29E]">(optional)</span>
                   </label>
                   <input
                     type="number"
@@ -366,6 +382,73 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({
             </div>
           </div>
         </div>
+
+      {showNudge && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-0 sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="nudge-title"
+          onClick={() => setShowNudge(false)}
+        >
+          <div
+            className="bs-fade-in w-full sm:max-w-md bg-white rounded-t-[20px] sm:rounded-[20px] border border-[#EAE4DA] p-5 sm:p-6 shadow-[0_12px_40px_rgba(28,25,23,0.18)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="nudge-title" className="font-serif text-[26px] text-[#1C1917] leading-tight">
+              Want a sharper check?
+            </h3>
+            <p className="text-sm text-[#78716C] mt-1.5 leading-relaxed">
+              Two optional extras help us catch more. Skip them if you don't have them.
+            </p>
+
+            <div className="mt-5 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-[#1C1917] mb-1">Typical monthly amount</label>
+                <p className="text-xs text-[#78716C] mb-1.5">What you normally pay. We'll show how much this bill jumped.</p>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  placeholder="e.g. 885"
+                  value={usualAmount}
+                  onChange={(e) => setUsualAmount(e.target.value)}
+                  className="w-full h-11 px-3 bg-white border border-[#EAE4DA] rounded-xl text-sm text-[#1C1917] placeholder-[#A8A29E] focus:outline-none focus:border-[#0F766E]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#1C1917] mb-1">Last month's bill</label>
+                <p className="text-xs text-[#78716C] mb-1.5">We'll point out any charge that's new this month.</p>
+                <button
+                  type="button"
+                  onClick={() => lastMonthInputRef.current?.click()}
+                  className="w-full h-11 px-3 bg-white border border-dashed border-[#0F766E]/40 rounded-xl text-sm text-left truncate text-[#0F766E] hover:border-[#0F766E]"
+                >
+                  {lastMonthFile ? lastMonthFile.file.name : '+ Add last month\'s bill'}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={runCheck}
+                className="w-full sm:flex-1 h-12 shrink-0 rounded-full border border-[#EAE4DA] text-sm font-medium text-[#78716C] hover:text-[#1C1917]"
+              >
+                Skip and check
+              </button>
+              <button
+                type="button"
+                onClick={runCheck}
+                disabled={!usualAmount && !lastMonthFile}
+                className="w-full sm:flex-1 h-12 shrink-0 rounded-full bg-[#0F766E] hover:bg-[#115E59] disabled:bg-[#EAE4DA] disabled:text-[#A8A29E] text-white text-sm font-medium"
+              >
+                Add and check
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
         {/* Small footer line */}
         <p className="text-center text-xs text-[#78716C] mt-8 leading-relaxed max-w-xl mx-auto">
