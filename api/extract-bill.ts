@@ -33,6 +33,7 @@ Format your output strictly according to this JSON structure:
 "total": number (final amount payable),
 "tax_rate": number (the tax percentage ONLY if printed on the bill, e.g. 18 for GST 18%, 10 for VAT 10%; 0 if not printed. Never guess by country),
 "tax_amount": number (total tax amount printed on the bill: GST/CGST+SGST/IGST/VAT/sales tax combined; 0 if none),
+"tax_box_2d": [ymin, xmin, ymax, xmax] (bounding box of the main tax line on the bill, normalised 0-1000; omit if no tax line),
 "lines": [ { "label": string, "amount": number, "box_2d": [ymin, xmin, ymax, xmax], "page": integer } ]
 }`;
 
@@ -51,6 +52,7 @@ Format your output strictly according to this JSON structure:
             total: { type: Type.NUMBER },
             tax_rate: { type: Type.NUMBER },
             tax_amount: { type: Type.NUMBER },
+            tax_box_2d: { type: Type.ARRAY, items: { type: Type.INTEGER } },
             lines: {
               type: Type.ARRAY,
               items: {

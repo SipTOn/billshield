@@ -61,6 +61,8 @@ export default async function handler(req: any, res: any) {
       facts?.linesTotal,
       facts?.taxAmount,
       facts?.lineTaxImpact,
+      facts?.expectedAmount,
+      facts?.difference,
     ].filter((n): n is number => typeof n === 'number' && !isNaN(n));
 
     const systemPrompt = `You are a concise, polite customer communication assistant.
@@ -81,6 +83,8 @@ Status: ${status}
 ${usualAmount ? `Usual Monthly Bill: ${money(usualAmount, currency)}` : ''}
 ${gapVsUsual ? `Unexplained Difference: ${money(gapVsUsual, currency)}` : ''}
 ${taxRate ? `Tax Rate: ${taxRate}%` : ''}
+${facts?.expectedAmount !== undefined ? `Correct amount computed by code: ${money(facts.expectedAmount, currency)}` : ''}
+${facts?.difference !== undefined ? `Difference: ${money(facts.difference, currency)}` : ''}
 
 Draft the short inquiry message now.`;
 
