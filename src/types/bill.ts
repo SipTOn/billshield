@@ -28,6 +28,7 @@ export interface BillData {
   currency: string;
   total: number;
   tax_rate?: number;
+  tax_amount?: number;
   lines: RawBillLine[];
   billImageUrl?: string;
 }
