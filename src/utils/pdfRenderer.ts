@@ -1,9 +1,10 @@
-import * as pdfjsLib from 'pdfjs-dist';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
+// Legacy build = works on older phone browsers. Worker is bundled with the app (no CDN needed).
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 
-// Use unpkg or cdnjs worker matching version to enable full worker rendering
 if (typeof window !== 'undefined') {
   try {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
   } catch (e) {
     console.warn('pdfjs worker initialization warning:', e);
   }

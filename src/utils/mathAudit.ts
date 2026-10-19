@@ -59,6 +59,18 @@ export function round2(num: number): number {
   return Math.round((num + Number.EPSILON) * 100) / 100;
 }
 
+// True if some subset of amounts adds up to target (within tolerance). Plain code, no AI.
+function subsetSumsTo(amounts: number[], target: number, tol: number): boolean {
+  const vals = amounts.filter((a) => a > 0).slice(0, 18);
+  const n = vals.length;
+  for (let mask = 1; mask < 1 << n; mask++) {
+    let sum = 0;
+    for (let i = 0; i < n; i++) if (mask & (1 << i)) sum += vals[i];
+    if (Math.abs(sum - target) <= tol) return true;
+  }
+  return false;
+}
+
 /**
  * Primary TypeScript math auditing engine.
  * Plain TypeScript only, never AI.
@@ -114,9 +126,28 @@ export function auditBillData(
       ? Math.round((statedTax / linesTotal) * 10000) / 100
       : 0;
 
+  // Taxable base: printed on the bill if available, else all charges.
+  // Many bills have tax-free lines (device instalments, government fees), so if tax
+  // matches the rate on some subset of the charges, that is consistent, not wrong.
+  const printedBase = bill.taxable_amount && bill.taxable_amount > 0 ? bill.taxable_amount : 0;
+  let taxBase = printedBase || linesTotal;
+  let taxBaseExplained = !!printedBase;
+  if (!printedBase && printedRate && statedTax > 0) {
+    const allLinesTax = roundMoney(linesTotal * (printedRate / 100), currency);
+    if (Math.abs(allLinesTax - statedTax) > Math.max(0.05, allLinesTax * 0.002)) {
+      const impliedBase = (statedTax * 100) / printedRate;
+      if (subsetSumsTo(chargeLines.map((l) => l.amount || 0), impliedBase, Math.max(0.05, impliedBase * 0.003))) {
+        taxBase = roundMoney(impliedBase, currency);
+        taxBaseExplained = true;
+      }
+    } else {
+      taxBaseExplained = true;
+    }
+  }
+
   // Tax code expects: printed rate x taxable base, else whatever tax the bill states
   const computedTax = printedRate
-    ? roundMoney(linesTotal * (printedRate / 100), currency)
+    ? roundMoney(taxBase * (printedRate / 100), currency)
     : statedTax;
   const taxUsedForTotal = statedTax > 0 ? statedTax : computedTax;
   const expectedTotal = roundMoney(linesTotal + taxUsedForTotal, currency);
@@ -126,9 +157,11 @@ export function auditBillData(
   const totalDifference = roundMoney(bill.total - expectedTotal, currency);
   const isTotalMismatch = Math.abs(totalDifference) > tolerance(expectedTotal);
 
-  // Tax is only judged when the bill prints its rate AND states the tax amount
+  // Tax is only judged when the bill prints its rate AND states the tax amount.
+  // 'wrong' only when the base is known (printed, or all charges); otherwise it's 'unexplained'.
   const isTaxMismatch =
     printedRate > 0 && statedTax > 0 && Math.abs(statedTax - computedTax) > tolerance(computedTax);
+  const isTaxProvenWrong = isTaxMismatch && !!printedBase;
 
   const isTotalValid = !isTotalMismatch;
   const isTaxValid = !isTaxMismatch;
@@ -201,14 +234,19 @@ export function auditBillData(
       id: 'math-mismatch-tax',
       label: `Tax charged (${printedRate}%)`,
       amount: statedTax,
-      status: 'wrong',
+      status: isTaxProvenWrong ? 'wrong' : 'unexplained',
       reasons: [
-        `Tax charged is ${formatMoney(statedTax, currency)}, but ${printedRate}% of ${formatMoney(
-          linesTotal,
-          currency
-        )} is ${formatMoney(computedTax, currency)}`,
+        isTaxProvenWrong
+          ? `Tax charged is ${formatMoney(statedTax, currency)}, but ${printedRate}% of the taxable ${formatMoney(
+              taxBase,
+              currency
+            )} is ${formatMoney(computedTax, currency)}`
+          : `Tax charged is ${formatMoney(statedTax, currency)}. ${printedRate}% of all charges would be ${formatMoney(
+              computedTax,
+              currency
+            )}, and no combination of charges explains it. Ask which charges the tax applies to.`,
       ],
-      isMathMismatch: true,
+      isMathMismatch: isTaxProvenWrong,
       userRecognized: false,
       expectedAmount: computedTax,
       difference: roundMoney(statedTax - computedTax, currency),
