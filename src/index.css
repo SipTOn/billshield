@@ -134,3 +134,19 @@
   img[alt="Bill Statement"] { background-color: #FFFFFF; }
   .bs-paper, .bs-scan { background-color: #FFFFFF !important; }
 }
+
+/* ---------- Sample receipt colours (own dark version so phones don't wash it out) ---------- */
+.rc-paper { fill: #FFFFFF; stroke: #EAE4DA; }
+.rc-ink { fill: #1C1917; }
+.rc-muted { fill: #78716C; }
+.rc-faint { fill: #A8A29E; }
+.rc-rule { stroke: #EAE4DA; }
+.rc-circle { stroke: #DC2626; }
+@media (prefers-color-scheme: dark) {
+  .rc-paper { fill: #26221F; stroke: #3A3530; }
+  .rc-ink { fill: #FAF7F2; }
+  .rc-muted { fill: #D6D0C9; }
+  .rc-faint { fill: #B5AEA7; }
+  .rc-rule { stroke: #4A453F; }
+  .rc-circle { stroke: #F87171; }
+}
