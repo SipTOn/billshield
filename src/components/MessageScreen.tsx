@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { formatMoney as fmtMoney } from '../utils/money';
+import { formatMoney as fmtMoney, roundMoney } from '../utils/money';
 import { AuditedBill, BillLine } from '../types/bill';
 import { Copy, Check } from 'lucide-react';
 
@@ -72,9 +72,14 @@ export const MessageScreen: React.FC<MessageScreenProps> = ({
             facts: {
               linesTotal: audit.linesTotal,
               taxAmount: audit.computedTax,
-              lineTaxImpact: audit.detectedTaxRate
-                ? (flaggedLine.amount * (100 + audit.detectedTaxRate)) / 100
-                : flaggedLine.amount,
+              lineTaxImpact: flaggedLine.isMathMismatch
+                ? undefined
+                : audit.detectedTaxRate
+                  ? roundMoney((flaggedLine.amount * (100 + audit.detectedTaxRate)) / 100, audit.currency)
+                  : flaggedLine.amount,
+              expectedAmount: flaggedLine.expectedAmount,
+              difference:
+                flaggedLine.difference !== undefined ? Math.abs(flaggedLine.difference) : undefined,
             },
           }),
         });

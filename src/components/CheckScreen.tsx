@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { formatMoney as fmtMoney } from '../utils/money';
+import { formatMoney as fmtMoney, roundMoney } from '../utils/money';
 import { AuditedBill, BillLine } from '../types/bill';
 import { X, ZoomIn, CheckCircle2 } from 'lucide-react';
 import { round2 } from '../utils/mathAudit';
@@ -78,8 +78,9 @@ export const CheckScreen: React.FC<CheckScreenProps> = ({
 
   // Computed facts for the flagged line
   const taxRate = audit.detectedTaxRate || 0;
-  const taxOnLine = taxRate > 0 ? round2(currentFlagged.amount * (taxRate / 100)) : 0;
-  const totalLineImpact = round2(currentFlagged.amount + taxOnLine);
+  const taxOnLine = taxRate > 0 ? roundMoney(currentFlagged.amount * (taxRate / 100), audit.currency) : 0;
+  const totalLineImpact = roundMoney(currentFlagged.amount + taxOnLine, audit.currency);
+  const isMath = !!currentFlagged.isMathMismatch && currentFlagged.expectedAmount !== undefined;
 
   const renderBillContent = (inZoom = false) => {
     return (
@@ -171,17 +172,32 @@ export const CheckScreen: React.FC<CheckScreenProps> = ({
 
             {/* Computed facts as 2-3 short rows */}
             <div className="border-t border-[#EAE4DA] pt-4 mb-6 space-y-2 text-xs text-[#78716C]">
-              {taxRate > 0 && (
-                <div className="flex items-center justify-between">
-                  <span>Tax on it ({taxRate}%):</span>
-                  <span className="text-[#1C1917] font-medium">{formatMoney(taxOnLine)}</span>
-                </div>
-              )}
+              {isMath ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span>Code says it should be:</span>
+                    <span className="text-[#1C1917] font-medium">{formatMoney(currentFlagged.expectedAmount || 0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>{(currentFlagged.difference || 0) >= 0 ? 'Overcharged by:' : 'Undercharged by:'}</span>
+                    <span className="text-[#DC2626] font-medium">{formatMoney(Math.abs(currentFlagged.difference || 0))}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {taxRate > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span>Tax on it ({taxRate}%):</span>
+                      <span className="text-[#1C1917] font-medium">{formatMoney(taxOnLine)}</span>
+                    </div>
+                  )}
 
-              <div className="flex items-center justify-between">
-                <span>Total impact with tax:</span>
-                <span className="text-[#1C1917] font-medium">{formatMoney(totalLineImpact)}</span>
-              </div>
+                  <div className="flex items-center justify-between">
+                    <span>Total impact with tax:</span>
+                    <span className="text-[#1C1917] font-medium">{formatMoney(totalLineImpact)}</span>
+                  </div>
+                </>
+              )}
 
               {audit.gapVsUsual !== undefined && (
                 <div className="flex items-center justify-between pt-1">
