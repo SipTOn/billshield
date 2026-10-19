@@ -14,6 +14,13 @@ import { renderPdfPageToDataUrl } from './utils/pdfRenderer';
 import { saveCheckToSupabase } from './utils/saveToSupabase';
 import { setBillSource } from './utils/pageImages';
 
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timed out')), ms)),
+  ]);
+}
+
 export default function App() {
   const [screen, setScreen] = useState<NavStep>('upload');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -63,18 +70,19 @@ export default function App() {
     }
 
     try {
-      let billImageUrl: string | undefined = undefined;
-
-      // Generate bill image for Check screen
-      if (params.file.mimeType === 'application/pdf') {
-        try {
-          billImageUrl = await renderPdfPageToDataUrl(params.file.data, 1);
-        } catch (renderErr) {
-          console.warn('PDF page rendering warning:', renderErr);
-        }
-      } else if (params.file.mimeType.startsWith('image/')) {
-        billImageUrl = `data:${params.file.mimeType};base64,${params.file.data}`;
-      }
+      // Bill picture for the Check screen. PDFs are drawn at the same time as the AI reads the
+      // bill, with a time limit, so drawing can never hold up the check.
+      const imagePromise: Promise<string | undefined> =
+        params.file.mimeType === 'application/pdf'
+          ? withTimeout(renderPdfPageToDataUrl(params.file.data, 1), 15000).catch((renderErr) => {
+              console.warn('PDF page rendering warning:', renderErr);
+              return undefined;
+            })
+          : Promise.resolve(
+              params.file.mimeType.startsWith('image/')
+                ? `data:${params.file.mimeType};base64,${params.file.data}`
+                : undefined
+            );
 
       // Last month's bill (optional) is read at the same time, so it adds no extra wait
       const lastMonthPromise: Promise<RawBillLine[] | undefined> = params.lastMonthFile
@@ -108,6 +116,7 @@ export default function App() {
 
       const json = await res.json();
       const rawData: BillData = json.data;
+      const billImageUrl = await imagePromise;
       if (billImageUrl) {
         rawData.billImageUrl = billImageUrl;
       }
