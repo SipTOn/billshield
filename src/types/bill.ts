@@ -31,6 +31,7 @@ export interface BillData {
   total: number;
   tax_rate?: number;
   tax_amount?: number;
+  taxable_amount?: number;
   tax_box_2d?: [number, number, number, number];
   lines: RawBillLine[];
   billImageUrl?: string;
