@@ -10,6 +10,8 @@ export interface BillLine {
   isVague?: boolean;
   isMathMismatch?: boolean;
   userRecognized?: boolean;
+  expectedAmount?: number; // what code says it should be (math mismatch lines)
+  difference?: number; // charged minus expected
   box_2d?: [number, number, number, number]; // [ymin, xmin, ymax, xmax] 0-1000
   page?: number;
 }
@@ -29,6 +31,7 @@ export interface BillData {
   total: number;
   tax_rate?: number;
   tax_amount?: number;
+  tax_box_2d?: [number, number, number, number];
   lines: RawBillLine[];
   billImageUrl?: string;
 }
