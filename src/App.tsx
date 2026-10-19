@@ -47,6 +47,7 @@ export default function App() {
     usualAmount?: number;
     lastMonthLines?: RawBillLine[];
     lastMonthFileName?: string;
+    lastMonthFile?: { data: string; mimeType: string };
   }) => {
     setIsLoading(true);
     setErrorMessage(null);
@@ -74,6 +75,21 @@ export default function App() {
         billImageUrl = `data:${params.file.mimeType};base64,${params.file.data}`;
       }
 
+      // Last month's bill (optional) is read at the same time, so it adds no extra wait
+      const lastMonthPromise: Promise<RawBillLine[] | undefined> = params.lastMonthFile
+        ? fetch('/api/extract-bill', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileData: params.lastMonthFile.data,
+              mimeType: params.lastMonthFile.mimeType,
+            }),
+          })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((j) => (j?.data?.lines as RawBillLine[]) || undefined)
+            .catch(() => undefined)
+        : Promise.resolve(params.lastMonthLines);
+
       // Gemini reads real file into structured JSON with bounding boxes
       const res = await fetch('/api/extract-bill', {
         method: 'POST',
@@ -96,11 +112,8 @@ export default function App() {
       }
 
       // Plain TypeScript math engine
-      const audited = auditBillData(
-        rawData,
-        params.usualAmount,
-        params.lastMonthLines
-      );
+      const lastMonthLines = await lastMonthPromise;
+      const audited = auditBillData(rawData, params.usualAmount, lastMonthLines);
 
       if (billImageUrl) {
         audited.billImageUrl = billImageUrl;

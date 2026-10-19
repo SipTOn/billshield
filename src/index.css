@@ -2,7 +2,7 @@
 
 @layer base {
   :root {
-    color-scheme: light only;
+    color-scheme: light dark;
     --font-serif: 'Instrument Serif', Georgia, serif;
     --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
@@ -19,6 +19,17 @@
   input, textarea, select {
     color: #1C1917;
     background-color: #FFFFFF;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body {
+      background-color: #161412;
+      color: #F5F2EC;
+    }
+    input, textarea, select {
+      color: #F5F2EC;
+      background-color: #1F1C1A;
+    }
   }
 
   input::placeholder, textarea::placeholder {
@@ -45,4 +56,81 @@
   stroke-dasharray: 600;
   stroke-dashoffset: 600;
   animation: drawEllipse 1.2s cubic-bezier(0.65, 0, 0.35, 1) 0.2s forwards;
+}
+
+/* ---------- Loading animations ---------- */
+.bs-scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #14B8A6, transparent);
+  box-shadow: 0 0 12px 2px rgba(20, 184, 166, 0.55);
+  animation: bsScan 1.6s ease-in-out infinite alternate;
+}
+@keyframes bsScan {
+  from { top: 4%; }
+  to { top: 94%; }
+}
+.bs-spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  border: 2px solid rgba(15, 118, 110, 0.25);
+  border-top-color: #0F766E;
+  animation: bsSpin 0.8s linear infinite;
+}
+@keyframes bsSpin {
+  to { transform: rotate(360deg); }
+}
+.bs-fade-in {
+  animation: bsFade 0.45s ease-out;
+}
+@keyframes bsFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bs-scan-line, .bs-spinner, .bs-fade-in, .animate-draw-ellipse { animation: none; }
+  .animate-draw-ellipse { stroke-dashoffset: 0; }
+}
+
+/* ---------- Dark mode ----------
+   The site has its own dark colours, so phones don't force-invert it.
+   Bills (uploaded image + sample receipt) stay on white paper so their text is always readable. */
+@media (prefers-color-scheme: dark) {
+  .bg-\[\#FAF7F2\] { background-color: #161412 !important; }
+  .bg-\[\#FAF7F2\]\/30, .bg-\[\#FAF7F2\]\/40, .bg-\[\#FAF7F2\]\/50 { background-color: rgba(255, 255, 255, 0.04) !important; }
+  .bg-white, .hover\:bg-white:hover, .focus\:bg-white:focus { background-color: #1F1C1A !important; }
+  .bg-\[\#EAE4DA\] { background-color: #34302B !important; }
+  .bg-\[\#F0FDFA\] { background-color: #0F2A27 !important; }
+  .bg-\[\#CCFBF1\] { background-color: #134E4A !important; }
+  .bg-\[\#FEF3C7\] { background-color: #3A2E0B !important; }
+  .bg-\[\#FEE2E2\], .bg-red-50 { background-color: #3B1414 !important; }
+
+  .text-\[\#1C1917\], .hover\:text-\[\#1C1917\]:hover { color: #F5F2EC !important; }
+  .text-\[\#78716C\] { color: #B5AEA7 !important; }
+  .text-\[\#A8A29E\] { color: #8F8882 !important; }
+  .text-\[\#EAE4DA\] { color: #4A453F !important; }
+  .text-\[\#0F766E\], .hover\:text-\[\#0F766E\]:hover { color: #5EEAD4 !important; }
+  .hover\:text-\[\#115E59\]:hover { color: #99F6E4 !important; }
+  .text-\[\#DC2626\], .text-red-600 { color: #F87171 !important; }
+  .text-red-700, .hover\:text-red-700:hover { color: #FCA5A5 !important; }
+  .text-\[\#B45309\] { color: #FBBF24 !important; }
+
+  .border-\[\#EAE4DA\], .divide-\[\#EAE4DA\] > * + * { border-color: #34302B !important; }
+  .border-\[\#0F766E\], .hover\:border-\[\#0F766E\]:hover, .focus\:border-\[\#0F766E\]:focus { border-color: #14B8A6 !important; }
+  .border-\[\#0F766E\]\/20, .border-\[\#0F766E\]\/30, .border-\[\#0F766E\]\/40 { border-color: rgba(20, 184, 166, 0.35) !important; }
+  .border-red-200 { border-color: #7F1D1D !important; }
+  .placeholder-\[\#A8A29E\]::placeholder { color: #6F6963 !important; }
+
+  /* Teal buttons keep white text */
+  .bg-\[\#0F766E\] { background-color: #0F766E !important; }
+  .bg-\[\#0F766E\].text-\[\#1C1917\] { color: #FFFFFF !important; }
+  .disabled\:bg-\[\#EAE4DA\]:disabled { background-color: #34302B !important; }
+  .disabled\:text-\[\#A8A29E\]:disabled { color: #6F6963 !important; }
+
+  /* Bills are paper: always white with dark text */
+  img[alt="Bill Statement"] { background-color: #FFFFFF; }
+  .bs-paper, .bs-scan { background-color: #FFFFFF !important; }
 }
