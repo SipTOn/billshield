@@ -210,6 +210,9 @@ export function auditBillData(
       ],
       isMathMismatch: true,
       userRecognized: false,
+      expectedAmount: computedTax,
+      difference: roundMoney(statedTax - computedTax, currency),
+      box_2d: bill.tax_box_2d,
       page: 1,
     });
   }
@@ -229,6 +232,8 @@ export function auditBillData(
       ],
       isMathMismatch: true,
       userRecognized: false,
+      expectedAmount: expectedTotal,
+      difference: totalDifference,
       page: 1,
     });
   }
